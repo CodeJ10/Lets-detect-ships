@@ -1,9 +1,9 @@
 import streamlit as st
-import cv2
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageDraw
 import tempfile
 import os
+import io
 import time
 from pathlib import Path
 from huggingface_hub import hf_hub_download
@@ -192,9 +192,9 @@ def run_inference(model, image: np.ndarray, conf_thresh: float, iou_thresh: floa
     )
     result = results[0]
 
-    # Annotated image
-    annotated = result.plot()
-    annotated_rgb = cv2.cvtColor(annotated, cv2.COLOR_BGR2RGB)
+    # Annotated image — result.plot() returns BGR numpy array, convert to RGB via PIL
+    annotated_bgr = result.plot()
+    annotated_rgb = annotated_bgr[:, :, ::-1]  # BGR → RGB, no cv2 needed
 
     # Parse detections
     detections = []
@@ -359,49 +359,7 @@ with tab1:
 # ── Tab 2: Video ──────────────────────────────────────────────────────────────
 with tab2:
     st.markdown("#### Video / Frame-by-frame Detection")
-    video_file = st.file_uploader("Upload a video file", type=["mp4", "avi", "mov", "mkv"])
-
-    if video_file and model:
-        tfile = tempfile.NamedTemporaryFile(delete=False, suffix=Path(video_file.name).suffix)
-        tfile.write(video_file.read())
-
-        cap = cv2.VideoCapture(tfile.name)
-        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        fps = cap.get(cv2.CAP_PROP_FPS)
-        cap.release()
-
-        st.info(f"Video: {total_frames} frames · {fps:.1f} FPS · {total_frames/fps:.1f}s")
-        frame_step = st.slider("Process every N frames", 1, 10, 2,
-                                help="Higher = faster but may miss some detections")
-
-        if st.button("▶️ Process Video"):
-            cap = cv2.VideoCapture(tfile.name)
-            frame_placeholder = st.empty()
-            progress = st.progress(0)
-            stats_placeholder = st.empty()
-
-            frame_idx = 0
-            total_det = 0
-
-            while cap.isOpened():
-                ret, frame = cap.read()
-                if not ret:
-                    break
-                if frame_idx % frame_step == 0:
-                    frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                    annotated, dets = run_inference(model, frame_rgb, conf_thresh, iou_thresh)
-                    total_det += len(dets)
-                    frame_placeholder.image(annotated, use_container_width=True, caption=f"Frame {frame_idx}")
-                    stats_placeholder.caption(f"Frame {frame_idx}/{total_frames} · {total_det} total detections so far")
-                progress.progress(min(frame_idx / max(total_frames, 1), 1.0))
-                frame_idx += 1
-
-            cap.release()
-            st.success(f"✅ Done! Processed {frame_idx} frames · {total_det} total detections.")
-    elif video_file and not model:
-        st.warning("Please load your model weights in the sidebar first.")
-    else:
-        st.info("Upload a video file to run frame-by-frame detection.", icon="🎬")
+    st.info("Video processing requires OpenCV system libraries not available on Streamlit Cloud. For video inference, run the app locally with `streamlit run app.py`.", icon="🎬")
 
 
 # ── Tab 3: Model Info ─────────────────────────────────────────────────────────
