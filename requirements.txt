@@ -4,3 +4,4 @@ numpy
 pillow
 torch
 huggingface_hub
+opencv-python-headless
