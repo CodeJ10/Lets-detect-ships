@@ -1,5 +1,4 @@
 import streamlit as st
-import cv2
 import numpy as np
 from PIL import Image
 import tempfile
@@ -190,7 +189,7 @@ def run_inference(model, image: np.ndarray, conf_thresh: float, iou_thresh: floa
 
     # Annotated image
     annotated = result.plot()
-    annotated_rgb = cv2.cvtColor(annotated, cv2.COLOR_BGR2RGB)
+    annotated_rgb = Image.cvtColor(annotated, Image.COLOR_BGR2RGB)
 
     # Parse detections
     detections = []
@@ -275,8 +274,8 @@ with tab1:
 
     if uploaded:
         file_bytes = np.asarray(bytearray(uploaded.read()), dtype=np.uint8)
-        image_bgr = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
-        image_rgb = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2RGB)
+        image_bgr = Image.imdecode(file_bytes, Image.IMREAD_COLOR)
+        image_rgb = Image.cvtColor(image_bgr, Image.COLOR_BGR2RGB)
         pil_image = Image.fromarray(image_rgb)
 
         col_img, col_det = st.columns([3, 2])
@@ -362,9 +361,9 @@ with tab2:
         tfile = tempfile.NamedTemporaryFile(delete=False, suffix=Path(video_file.name).suffix)
         tfile.write(video_file.read())
 
-        cap = cv2.VideoCapture(tfile.name)
-        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        fps = cap.get(cv2.CAP_PROP_FPS)
+        cap = Image.VideoCapture(tfile.name)
+        total_frames = int(cap.get(Image.CAP_PROP_FRAME_COUNT))
+        fps = cap.get(Image.CAP_PROP_FPS)
         cap.release()
 
         st.info(f"Video: {total_frames} frames · {fps:.1f} FPS · {total_frames/fps:.1f}s")
@@ -372,7 +371,7 @@ with tab2:
                                 help="Higher = faster but may miss some detections")
 
         if st.button("▶️ Process Video"):
-            cap = cv2.VideoCapture(tfile.name)
+            cap = Image.VideoCapture(tfile.name)
             frame_placeholder = st.empty()
             progress = st.progress(0)
             stats_placeholder = st.empty()
@@ -385,7 +384,7 @@ with tab2:
                 if not ret:
                     break
                 if frame_idx % frame_step == 0:
-                    frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                    frame_rgb = Image.cvtColor(frame, Image.COLOR_BGR2RGB)
                     annotated, dets = run_inference(model, frame_rgb, conf_thresh, iou_thresh)
                     total_det += len(dets)
                     frame_placeholder.image(annotated, use_container_width=True, caption=f"Frame {frame_idx}")
