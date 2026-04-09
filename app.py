@@ -1,4 +1,5 @@
 import streamlit as st
+import cv2
 import numpy as np
 from PIL import Image
 import tempfile
@@ -6,16 +7,6 @@ import os
 import time
 from pathlib import Path
 from huggingface_hub import hf_hub_download
-
-# ─── Auto-download weights from Hugging Face ────────────────────────────────
-@st.cache_resource(show_spinner="Downloading model weights...")
-def get_weights():
-    return hf_hub_download(
-        repo_id="CodeJ10/shipsight-yolov8",  # ← change this
-        filename="best.pt",
-    )
-
-HF_WEIGHTS_PATH = get_weights()
 
 # ─── Page config ────────────────────────────────────────────────────────────
 st.set_page_config(
@@ -164,6 +155,15 @@ html, body, [class*="css"] {
 """, unsafe_allow_html=True)
 
 
+# ─── Auto-download weights from Hugging Face ────────────────────────────────
+@st.cache_resource(show_spinner="Downloading model weights...")
+def get_weights():
+    return hf_hub_download(
+        repo_id="CodeJ10/shipsight-yolov8",
+        filename="best.pt",
+    )
+
+
 # ─── Model loader ────────────────────────────────────────────────────────────
 @st.cache_resource(show_spinner=False)
 def load_model(weights_path: str):
@@ -174,6 +174,11 @@ def load_model(weights_path: str):
         return model, None
     except Exception as e:
         return None, str(e)
+
+
+# ─── Auto-load default model from Hugging Face ──────────────────────────────
+HF_WEIGHTS_PATH = get_weights()
+default_model, default_err = load_model(HF_WEIGHTS_PATH)
 
 
 # ─── Inference helper ────────────────────────────────────────────────────────
@@ -189,7 +194,7 @@ def run_inference(model, image: np.ndarray, conf_thresh: float, iou_thresh: floa
 
     # Annotated image
     annotated = result.plot()
-    annotated_rgb = annotated
+    annotated_rgb = cv2.cvtColor(annotated, cv2.COLOR_BGR2RGB)
 
     # Parse detections
     detections = []
@@ -215,12 +220,12 @@ with st.sidebar:
 
     weights_source = st.radio(
         "Weights source",
-        ["Upload .pt file", "Enter path"],
+        ["Auto (Hugging Face)", "Upload .pt file", "Enter path"],
         label_visibility="collapsed",
     )
 
-    model = None
-    model_err = None
+    model = default_model
+    model_err = default_err
 
     if weights_source == "Upload .pt file":
         weights_file = st.file_uploader("Upload model weights (.pt)", type=["pt"])
@@ -230,7 +235,8 @@ with st.sidebar:
             tmp.flush()
             with st.spinner("Loading model..."):
                 model, model_err = load_model(tmp.name)
-    else:
+
+    elif weights_source == "Enter path":
         weights_path = st.text_input("Weights path", value="best.pt", placeholder="e.g. runs/detect/train/weights/best.pt")
         if st.button("Load model"):
             if os.path.exists(weights_path):
@@ -359,9 +365,9 @@ with tab2:
         tfile = tempfile.NamedTemporaryFile(delete=False, suffix=Path(video_file.name).suffix)
         tfile.write(video_file.read())
 
-        cap = Image.VideoCapture(tfile.name)
-        total_frames = int(cap.get(Image.CAP_PROP_FRAME_COUNT))
-        fps = cap.get(Image.CAP_PROP_FPS)
+        cap = cv2.VideoCapture(tfile.name)
+        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        fps = cap.get(cv2.CAP_PROP_FPS)
         cap.release()
 
         st.info(f"Video: {total_frames} frames · {fps:.1f} FPS · {total_frames/fps:.1f}s")
@@ -369,7 +375,7 @@ with tab2:
                                 help="Higher = faster but may miss some detections")
 
         if st.button("▶️ Process Video"):
-            cap = Image.VideoCapture(tfile.name)
+            cap = cv2.VideoCapture(tfile.name)
             frame_placeholder = st.empty()
             progress = st.progress(0)
             stats_placeholder = st.empty()
@@ -382,7 +388,7 @@ with tab2:
                 if not ret:
                     break
                 if frame_idx % frame_step == 0:
-                    frame_rgb = Image.cvtColor(frame, Image.COLOR_BGR2RGB)
+                    frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                     annotated, dets = run_inference(model, frame_rgb, conf_thresh, iou_thresh)
                     total_det += len(dets)
                     frame_placeholder.image(annotated, use_container_width=True, caption=f"Frame {frame_idx}")
