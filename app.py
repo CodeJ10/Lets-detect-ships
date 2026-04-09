@@ -189,7 +189,7 @@ def run_inference(model, image: np.ndarray, conf_thresh: float, iou_thresh: floa
 
     # Annotated image
     annotated = result.plot()
-    annotated_rgb = Image.cvtColor(annotated, Image.COLOR_BGR2RGB)
+    annotated_rgb = annotated
 
     # Parse detections
     detections = []
@@ -273,17 +273,15 @@ with tab1:
     )
 
     if uploaded:
-        file_bytes = np.asarray(bytearray(uploaded.read()), dtype=np.uint8)
-        image_bgr = Image.imdecode(file_bytes, Image.IMREAD_COLOR)
-        image_rgb = Image.cvtColor(image_bgr, Image.COLOR_BGR2RGB)
-        pil_image = Image.fromarray(image_rgb)
+        pil_image = Image.open(uploaded).convert("RGB")
+        image_rgb = np.array(pil_image)
 
         col_img, col_det = st.columns([3, 2])
 
         with col_img:
             st.markdown('<div class="section-title">Input Image</div>', unsafe_allow_html=True)
             st.image(pil_image, use_container_width=True)
-            h, w = image_bgr.shape[:2]
+            h, w = image_rgb.shape[:2]
             st.caption(f"Resolution: {w} × {h} px  ·  Size: {uploaded.size / 1024:.1f} KB")
 
         if not model:
