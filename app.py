@@ -6,6 +6,17 @@ import tempfile
 import os
 import time
 from pathlib import Path
+from huggingface_hub import hf_hub_download
+
+# ─── Auto-download weights from Hugging Face ────────────────────────────────
+@st.cache_resource(show_spinner="Downloading model weights...")
+def get_weights():
+    return hf_hub_download(
+        repo_id="CodeJ10/shipsight-yolov8",  # ← change this
+        filename="best.pt",
+    )
+
+HF_WEIGHTS_PATH = get_weights()
 
 # ─── Page config ────────────────────────────────────────────────────────────
 st.set_page_config(
