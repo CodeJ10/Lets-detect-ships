@@ -12,7 +12,7 @@ from huggingface_hub import hf_hub_download
 @st.cache_resource(show_spinner="Downloading model weights...")
 def get_weights():
     return hf_hub_download(
-        repo_id="CodeJ10/shipsight-yolov8",  # ← change this
+        repo_id="CodeJ10/shipsight-yolov8/tree/main",  # ← change this
         filename="best.pt",
     )
 
