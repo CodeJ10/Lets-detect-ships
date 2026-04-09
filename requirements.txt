@@ -4,6 +4,9 @@ opencv-python-headless
 numpy
 pillow
 torch
+<<<<<<< HEAD
 
 # 🔥 ADD THIS LINE (IMPORTANT)
 opencv-python==0
+=======
+>>>>>>> 35808898969d39c461340402e957171b0f894fb2
