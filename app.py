@@ -155,7 +155,7 @@ html, body, [class*="css"] {
 """, unsafe_allow_html=True)
 
 
-# ─── Auto-download weights from Hugging Face ────────────────────────────────
+# ─── Auto-download weights from HuggingFace ────────────────────────────────
 @st.cache_resource(show_spinner="Downloading model weights...")
 def get_weights():
     return hf_hub_download(
