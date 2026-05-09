@@ -1,6 +1,6 @@
 opencv-python-headless==4.13.0.92
 ultralytics==8.4.48
-huggingface-hub
-streamlit
+huggingface-hub>=1.14.0
+streamlit>=1.57.0
 pillow
 numpy
