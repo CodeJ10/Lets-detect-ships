@@ -1,7 +1,6 @@
-streamlit
+opencv-python-headless>=4.0.0
 ultralytics
-numpy
+huggingface-hub
+streamlit
 pillow
-torch
-huggingface_hub
-opencv-python-headless
+numpy
